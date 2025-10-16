@@ -1,0 +1,41 @@
+{
+  "evaluate": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "function": "def update_wheel_heater(state, wheel_heater_button_state, ambient_temp, wheel_heater_temp_feedback, cold_threshold, dt):\n    # Initialize state variables\n    if 'prev_button_state' not in state:\n        state['prev_button_state'] = 'Released'\n    if 'heater_mode' not in state:\n        state['heater_mode'] = 'Off'\n    if 'heater_level' not in state:\n        state['heater_level'] = 'Off'\n    if 'boost_timer' not in state:\n        state['boost_timer'] = 0.0\n    \n    # Detect button press edge\n    button_pressed_edge = (state['prev_button_state'] == 'Released' and \n                          wheel_heater_button_state == 'Pressed')\n    button_released_edge = (state['prev_button_state'] == 'Pressed' and \n                           wheel_heater_button_state == 'Released')\n    \n    # Handle button press\n    if button_pressed_edge:\n        if ambient_temp not in ['Fault', 'Unavailable']:\n            if ambient_temp <= cold_threshold:\n                state['heater_mode'] = 'Boost'\n                state['heater_level'] = 'High'\n                state['boost_timer'] = 180.0\n            else:\n                state['heater_mode'] = 'Normal'\n                state['heater_level'] = 'Medium'\n    \n    # Handle button release\n    if button_released_edge:\n        state['heater_mode'] = 'Standby'\n    \n    # Handle boost timer\n    if state['heater_mode'] == 'Boost':\n        state['boost_timer'] -= dt\n        if state['boost_timer'] <= 0:\n            state['heater_mode'] = 'Normal'\n            state['heater_level'] = 'Medium'\n        \n        # Check for faults during boost\n        if (ambient_temp in ['Fault', 'Unavailable'] or \n            wheel_heater_temp_feedback in ['Fault', 'Unavailable']):\n            state['heater_mode'] = 'Off'\n            state['heater_level'] = 'Off'\n    \n    state['prev_button_state'] = wheel_heater_button_state\n    return state['heater_mode'], state['heater_level']",
+        "score": 4.0
+      },
+      {
+        "function": "def door_lock_controller(state, door_ajar_signals, gear_selector, vehicle_tempo, \n                        crash_event_detected, ignition_state, dt):\n    \"\"\"\n    Basic door lock control - straightforward implementation\n    \"\"\"\n    speed_timer = state.get('speed_timer', 0)\n    crash_unlock_active = state.get('crash_unlock_active', False)\n    prev_crash = state.get('prev_crash', False)\n    current_command = state.get('door_lock_command', 'NoChange')\n    \n    # Crash detection edge\n    crash_edge = crash_event_detected and not prev_crash\n    \n    # Handle crash unlock\n    if crash_edge:\n        crash_unlock_active = True\n        current_command = 'UnlockAll'\n    \n    if crash_unlock_active and ignition_state == 'Off':\n        crash_unlock_active = False\n    \n    # If crash unlock is active, maintain unlock command\n    if crash_unlock_active:\n        current_command = 'UnlockAll'\n    else:\n        # Check normal locking conditions\n        all_doors_closed = all(signal == 'Closed' for signal in door_ajar_signals)\n        \n        if (all_doors_closed and gear_selector != 'Park' and vehicle_tempo > 15):\n            speed_timer += dt\n            if speed_timer >= 5.0:\n                current_command = 'LockAll'\n        else:\n            speed_timer = 0\n        \n        # Door ajar while moving check - command remains unchanged as per requirement\n        # This is implicitly handled by not changing current_command\n    \n    # Save state\n    state['speed_timer'] = speed_timer\n    state['crash_unlock_active'] = crash_unlock_active\n    state['prev_crash'] = crash_event_detected\n    state['door_lock_command'] = current_command\n    \n    return current_command",
+        "score": 3.42857142857143
+      },
+      {
+        "function": "def wiper_control_logic(state, swipe_mode, rain_strength, vehicle_tempo, driver_wiper_override, \n                       driver_wiper_position, ignition_state, rain_low_threshold, rain_high_threshold, dt):\n    # State initialization - using dict.get() for cleaner code\n    low_rain_timer = state.get('low_rain_timer', 0.0)\n    auto_suspended = state.get('auto_suspended', False)\n    suspend_timer = state.get('suspend_timer', 0.0)\n    prev_override = state.get('prev_override', 'Inactive')\n    \n    # Check for driver override transition\n    override_activated = (prev_override != 'Active' and driver_wiper_override == 'Active')\n    \n    if override_activated:\n        auto_suspended = True\n        suspend_timer = 600.0  # 10 minutes\n    \n    # Handle suspension timer and ignition off\n    if auto_suspended:\n        if ignition_state == 'Off':\n            auto_suspended = False\n            suspend_timer = 0.0\n        elif suspend_timer > 0:\n            suspend_timer -= dt\n            if suspend_timer <= 0:\n                auto_suspended = False\n    \n    # Determine wiper command\n    if auto_suspended:\n        wiper_command = driver_wiper_position\n    elif swipe_mode == 'Auto' and rain_strength not in ['Fault', 'Unavailable']:\n        if rain_strength >= rain_high_threshold and vehicle_tempo >= 5:\n            wiper_command = 'Fast'\n            low_rain_timer = 0.0\n        elif rain_low_threshold <= rain_strength < rain_high_threshold:\n            wiper_command = 'Normal'\n            low_rain_timer = 0.0\n        elif rain_strength < rain_low_threshold:\n            low_rain_timer += dt\n            wiper_command = 'Intermittent' if low_rain_timer >= 15.0 else state.get('wiper_command', 'Normal')\n        else:\n            wiper_command = 'Normal'\n    else:\n        wiper_command = 'Off'\n    \n    # Update state\n    state.update({\n        'low_rain_timer': low_rain_timer,\n        'auto_suspended': auto_suspended,\n        'suspend_timer': suspend_timer,\n        'prev_override': driver_wiper_override,\n        'wiper_command': wiper_command\n    })\n    \n    return wiper_command, auto_suspended",
+        "score": 2.71428571428571
+      }
+    ],
+    "signature": {
+      "instructions": "Analyze the functionality of the provided Python code and evaluate its quality based on four key metrics: readability, maintainability, efficiency, and adherence to best practices. Assign a score between 1 and 5 to reflect the overall quality, where 1 denotes poor quality and 5 signifies excellent quality. Consider the code structure, clarity, documentation, algorithm efficiency, and stylistic consistency to determine the score. Ensure the output is a continuous float within the given range, providing developers insight into potential improvements for achieving higher quality standards.",
+      "fields": [
+        {
+          "prefix": "Function:",
+          "description": "Function to be evaluated."
+        },
+        {
+          "prefix": "Score:",
+          "description": "A float representing the code quality score of the function."
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.12",
+      "dspy": "3.0.3",
+      "cloudpickle": "3.1"
+    }
+  }
+}

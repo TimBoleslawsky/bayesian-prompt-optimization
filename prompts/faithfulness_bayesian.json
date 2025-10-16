@@ -1,0 +1,48 @@
+{
+  "evaluate": {
+    "traces": [],
+    "train": [],
+    "demos": [
+      {
+        "function": "def update_wheel_heater(state, wheel_heater_button_state, ambient_temp, wheel_heater_temp_feedback, cold_threshold, dt):\n    # Initialize state variables\n    if 'prev_button_state' not in state:\n        state['prev_button_state'] = 'Released'\n    if 'heater_mode' not in state:\n        state['heater_mode'] = 'Off'\n    if 'heater_level' not in state:\n        state['heater_level'] = 'Off'\n    if 'boost_timer' not in state:\n        state['boost_timer'] = 0.0\n    \n    # Detect button press edge\n    button_pressed_edge = (state['prev_button_state'] == 'Released' and \n                          wheel_heater_button_state == 'Pressed')\n    button_released_edge = (state['prev_button_state'] == 'Pressed' and \n                           wheel_heater_button_state == 'Released')\n    \n    # Handle button press\n    if button_pressed_edge:\n        if ambient_temp not in ['Fault', 'Unavailable']:\n            if ambient_temp <= cold_threshold:\n                state['heater_mode'] = 'Boost'\n                state['heater_level'] = 'High'\n                state['boost_timer'] = 180.0\n            else:\n                state['heater_mode'] = 'Normal'\n                state['heater_level'] = 'Medium'\n    \n    # Handle button release\n    if button_released_edge:\n        state['heater_mode'] = 'Standby'\n    \n    # Handle boost timer\n    if state['heater_mode'] == 'Boost':\n        state['boost_timer'] -= dt\n        if state['boost_timer'] <= 0:\n            state['heater_mode'] = 'Normal'\n            state['heater_level'] = 'Medium'\n        \n        # Check for faults during boost\n        if (ambient_temp in ['Fault', 'Unavailable'] or \n            wheel_heater_temp_feedback in ['Fault', 'Unavailable']):\n            state['heater_mode'] = 'Off'\n            state['heater_level'] = 'Off'\n    \n    state['prev_button_state'] = wheel_heater_button_state\n    return state['heater_mode'], state['heater_level']",
+        "requirement": "On the event that WheelHeaterButtonState changes from 'Released' to 'Pressed', if AmbivilantTemp is valid and AmbivilantTemp <= ColdThreshold, then WheelHeaterMode shall be set to 'Boost' for 180 s and WheelHeaterLevel shall be set to 'High'; if AmbivilantTemp > ColdThreshold, WheelHeaterMode shall be set to 'Normal' and WheelHeaterLevel to 'Medium'. If AmbivilantTemp or WheelHeaterTempFeedback is 'Fault' or 'Unavailable' at any time during Boost, WheelHeaterMode shall be set to 'Off'. On the event that WheelHeaterButtonState changes from 'Pressed' to 'Released', WheelHeaterMode shall be set to 'Standby'.",
+        "score": 3.69557142857143
+      },
+      {
+        "function": "def door_lock_controller(state, door_ajar_signals, gear_selector, vehicle_tempo, \n                        crash_event_detected, ignition_state, dt):\n    \"\"\"\n    Basic door lock control - straightforward implementation\n    \"\"\"\n    speed_timer = state.get('speed_timer', 0)\n    crash_unlock_active = state.get('crash_unlock_active', False)\n    prev_crash = state.get('prev_crash', False)\n    current_command = state.get('door_lock_command', 'NoChange')\n    \n    # Crash detection edge\n    crash_edge = crash_event_detected and not prev_crash\n    \n    # Handle crash unlock\n    if crash_edge:\n        crash_unlock_active = True\n        current_command = 'UnlockAll'\n    \n    if crash_unlock_active and ignition_state == 'Off':\n        crash_unlock_active = False\n    \n    # If crash unlock is active, maintain unlock command\n    if crash_unlock_active:\n        current_command = 'UnlockAll'\n    else:\n        # Check normal locking conditions\n        all_doors_closed = all(signal == 'Closed' for signal in door_ajar_signals)\n        \n        if (all_doors_closed and gear_selector != 'Park' and vehicle_tempo > 15):\n            speed_timer += dt\n            if speed_timer >= 5.0:\n                current_command = 'LockAll'\n        else:\n            speed_timer = 0\n        \n        # Door ajar while moving check - command remains unchanged as per requirement\n        # This is implicitly handled by not changing current_command\n    \n    # Save state\n    state['speed_timer'] = speed_timer\n    state['crash_unlock_active'] = crash_unlock_active\n    state['prev_crash'] = crash_event_detected\n    state['door_lock_command'] = current_command\n    \n    return current_command",
+        "requirement": "If all DoorAjarSignals are 'Closed', GearSelector is not 'Park', and VehicleTempo exceeds 15 km/h continuously for 5 s, DoorLockCommand shall be set to 'LockAll'. If CrashEventDetected transitions from 'False' to 'True', DoorLockCommand shall be set to 'UnlockAll' immediately and retained until IgnitionState transitions to 'Off'. If any DoorAjarSignal transitions to 'Open' while VehicleTempo > 0, DoorLockCommand shall remain unchanged.",
+        "score": 3.53442857142857
+      },
+      {
+        "function": "def wiper_control_logic(state, swipe_mode, rain_strength, vehicle_tempo, driver_wiper_override, \n                       driver_wiper_position, ignition_state, rain_low_threshold, rain_high_threshold, dt):\n    # State initialization - using dict.get() for cleaner code\n    low_rain_timer = state.get('low_rain_timer', 0.0)\n    auto_suspended = state.get('auto_suspended', False)\n    suspend_timer = state.get('suspend_timer', 0.0)\n    prev_override = state.get('prev_override', 'Inactive')\n    \n    # Check for driver override transition\n    override_activated = (prev_override != 'Active' and driver_wiper_override == 'Active')\n    \n    if override_activated:\n        auto_suspended = True\n        suspend_timer = 600.0  # 10 minutes\n    \n    # Handle suspension timer and ignition off\n    if auto_suspended:\n        if ignition_state == 'Off':\n            auto_suspended = False\n            suspend_timer = 0.0\n        elif suspend_timer > 0:\n            suspend_timer -= dt\n            if suspend_timer <= 0:\n                auto_suspended = False\n    \n    # Determine wiper command\n    if auto_suspended:\n        wiper_command = driver_wiper_position\n    elif swipe_mode == 'Auto' and rain_strength not in ['Fault', 'Unavailable']:\n        if rain_strength >= rain_high_threshold and vehicle_tempo >= 5:\n            wiper_command = 'Fast'\n            low_rain_timer = 0.0\n        elif rain_low_threshold <= rain_strength < rain_high_threshold:\n            wiper_command = 'Normal'\n            low_rain_timer = 0.0\n        elif rain_strength < rain_low_threshold:\n            low_rain_timer += dt\n            wiper_command = 'Intermittent' if low_rain_timer >= 15.0 else state.get('wiper_command', 'Normal')\n        else:\n            wiper_command = 'Normal'\n    else:\n        wiper_command = 'Off'\n    \n    # Update state\n    state.update({\n        'low_rain_timer': low_rain_timer,\n        'auto_suspended': auto_suspended,\n        'suspend_timer': suspend_timer,\n        'prev_override': driver_wiper_override,\n        'wiper_command': wiper_command\n    })\n    \n    return wiper_command, auto_suspended",
+        "requirement": "When SwipeMode is 'Auto' and RainStrength is valid, if RainStrength >= RainHighThreshold and VehicleTempo >= 5 km/h, WiperCommand shall be set to 'Fast'. If RainStrength is between RainLowThreshold and RainHighThreshold, WiperCommand shall be set to 'Normal'. If RainStrength < RainLowThreshold for 15 s, WiperCommand shall be set to 'Intermittent'. When DriverWiperOverride transitions to 'Active', AutoWiperSuspended shall be set to 'True' and WiperCommand shall follow DriverWiperPosition; AutoWiperSuspended shall be cleared to 'False' after 10 min or on IgnitionState transitioning to 'Off', whichever occurs first.",
+        "score": 3.50128571428571
+      }
+    ],
+    "signature": {
+      "instructions": "Performs static code analysis on the function. Only evaluate function based\non faithfulness given the requirement as specification. Evaluate\nhow well the function represents the requirement.\n\nScore based on these specifications:\n- 1 = Function does not represent the logic of the requirement at all.\n- 2 = Function barely represents the logic of the requirement.\n- 3 = Function partially represents the logic of the requirement.\n- 4 = Function correctly represents the logic of the requirement, but has some\nsemantic differences or interprets the logic slightly differently than the requirement.\n- 5 = Function perfectly represents the logic and semantic of the requirement.\n\nThe return value of this function should always be an continuous number between 1 and 5.",
+      "fields": [
+        {
+          "prefix": "Function:",
+          "description": "Function to be evaluated."
+        },
+        {
+          "prefix": "Requirement:",
+          "description": "Requirement that serves as specification for the functionand is basis for the analysis for faithfulness."
+        },
+        {
+          "prefix": "Score:",
+          "description": "A float representing the faithfulness score of the function."
+        }
+      ]
+    },
+    "lm": null
+  },
+  "metadata": {
+    "dependency_versions": {
+      "python": "3.12",
+      "dspy": "3.0.3",
+      "cloudpickle": "3.1"
+    }
+  }
+}
