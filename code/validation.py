@@ -1,10 +1,8 @@
 import json
 import pandas as pd
 import dspy
-import os
-from datetime import datetime
-from bayesian_prompt_optimization.settings import settings
-from bayesian_prompt_optimization.code.optimization import (
+from settings import settings
+from code.optimization import (
     CodeQualityPredictor,
     FaithfulnessPredictor
 )
@@ -47,11 +45,11 @@ class PromptLoader:
         
         # Load Bayesian optimized prompts
         bayesian_cq = PromptLoader.load_optimized_module(
-            "bayesian_prompt_optimization/prompts/code_quality_bayesian.json",
+            "prompts/code_quality_bayesian.json",
             CodeQualityPredictor
         )
         bayesian_faith = PromptLoader.load_optimized_module(
-            "bayesian_prompt_optimization/prompts/faithfulness_bayesian.json",
+            "prompts/faithfulness_bayesian.json",
             FaithfulnessPredictor
         )
         
@@ -62,11 +60,11 @@ class PromptLoader:
         
         # Load normal optimized prompts
         normal_cq = PromptLoader.load_optimized_module(
-            "bayesian_prompt_optimization/prompts/code_quality_normal.json",
+            "prompts/code_quality_normal.json",
             CodeQualityPredictor
         )
         normal_faith = PromptLoader.load_optimized_module(
-            "bayesian_prompt_optimization/prompts/faithfulness_normal.json",
+            "prompts/faithfulness_normal.json",
             FaithfulnessPredictor
         )
         
@@ -88,13 +86,13 @@ class ValidationRunner:
     
     def _load_holdout_data(self):
         """Load the holdout dataset."""
-        with open("bayesian_prompt_optimization/data/benchmark_holdout.json", "r") as f:
+        with open("data/benchmark_holdout.json", "r") as f:
             data = json.load(f)
         return pd.DataFrame(data["benchmark"])
     
     def _load_human_annotations(self):
         """Load and process human annotations."""
-        with open("bayesian_prompt_optimization/data/scores_holdout.json", "r") as f:
+        with open("data/scores_holdout.json", "r") as f:
             annotations = json.load(f)
         
         # Organize scores by question ID and annotator
@@ -193,7 +191,7 @@ class ValidationRunner:
     
     def _save_results(self, results):
         """Save validation results to artefacts folder."""
-        filename = "bayesian_prompt_optimization/artefacts/validation_results.json"
+        filename = "artefacts/validation_results.json"
 
         with open(filename, 'w') as f:
             json.dump(results, f, indent=2)

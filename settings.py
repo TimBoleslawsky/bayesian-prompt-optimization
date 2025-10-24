@@ -7,8 +7,8 @@ from pydantic_settings import (
 )
 
 class LLMSettings(BaseModel):
-    api_url: HttpUrl = ""
-    api_key: str = ""
+    api_url: HttpUrl = HttpUrl("http://coreml-llm-proxy.k8-prod2.ess.volvo.net")
+    api_key: str = "sk-u3qE07-iUFvuDBCaPnFWhA"
     model_name: Literal[
         "azure-gpt-4o",
         "llama-31-70b",

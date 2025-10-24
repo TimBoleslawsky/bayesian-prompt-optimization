@@ -2,10 +2,9 @@ import pandas as pd
 import json
 import dspy
 from dspy.teleprompt import MIPROv2
-
-from bayesian_prompt_optimization.settings import settings
-from bayesian_prompt_optimization.code.code_quality_signature import EvaluateCodeQuality
-from bayesian_prompt_optimization.code.faithfulness_signature import EvaluateFaithfulness
+from settings import settings
+from code.code_quality_signature import EvaluateCodeQuality
+from code.faithfulness_signature import EvaluateFaithfulness
 
 
 class CodeQualityPredictor(dspy.Module):
