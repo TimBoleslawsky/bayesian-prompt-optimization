@@ -1,0 +1,266 @@
+{
+  "prompt_aggregates": {
+    "original": {
+      "code_quality": {
+        "mean_variance": 0.058791275167785234,
+        "variance_of_variances": 0.00019122511658633978,
+        "mean_of_means": 3.838333333333334,
+        "variance_of_means": 0.0030194074074073943
+      },
+      "faithfulness": {
+        "mean_variance": 0.6801454138702461,
+        "variance_of_variances": 0.00018484369239289984,
+        "mean_of_means": 4.455,
+        "variance_of_means": 0.0009296296296296243
+      },
+      "combined_score": {
+        "mean_variance": 0.8231022371364652,
+        "variance_of_variances": 0.00022305140669339008,
+        "mean_of_means": 8.293333333333333,
+        "variance_of_means": 0.000631999999999999
+      },
+      "test_count": 4
+    },
+    "normal": {
+      "code_quality": {
+        "mean_variance": 0.10584860293110537,
+        "variance_of_variances": 0.003711818877718,
+        "mean_of_means": 3.8319285714285725,
+        "variance_of_means": 0.019986215419501133
+      },
+      "faithfulness": {
+        "mean_variance": 1.0520975417497351,
+        "variance_of_variances": 0.00821501333257422,
+        "mean_of_means": 4.269162698412698,
+        "variance_of_means": 0.00027722102544722773
+      },
+      "combined_score": {
+        "mean_variance": 1.2400727719312936,
+        "variance_of_variances": 0.041008464794024514,
+        "mean_of_means": 8.101091269841273,
+        "variance_of_means": 0.02131897360796192
+      },
+      "test_count": 4
+    },
+    "bayesian": {
+      "code_quality": {
+        "mean_variance": 0.11027028582973872,
+        "variance_of_variances": 0.0048135929995771765,
+        "mean_of_means": 3.8006857071428577,
+        "variance_of_means": 0.02769320728830832
+      },
+      "faithfulness": {
+        "mean_variance": 0.9452732217162032,
+        "variance_of_variances": 0.002403197375632628,
+        "mean_of_means": 4.086391666666666,
+        "variance_of_means": 0.0006491389323507128
+      },
+      "combined_score": {
+        "mean_variance": 1.2308248571148814,
+        "variance_of_variances": 0.03070395507906203,
+        "mean_of_means": 7.887077373809525,
+        "variance_of_means": 0.032431698441664034
+      },
+      "test_count": 4
+    }
+  },
+  "cross_test_analysis": {},
+  "summary": {
+    "most_consistent_prompt": {
+      "prompt_type": "original",
+      "mean_variance": 0.8231022371364652
+    },
+    "highest_variance_prompt": {
+      "prompt_type": "normal",
+      "mean_variance": 1.2400727719312936
+    },
+    "analysis_timestamp": "2025-10-24T11:44:21.740770",
+    "total_tests_analyzed": 4
+  },
+  "detailed_variance_by_test": {
+    "1": {
+      "prompt_variances": {
+        "original": {
+          "code_quality_variance": 0.0765565995525727,
+          "faithfulness_variance": 0.6608053691275169,
+          "combined_score_variance": 0.8315364653243846,
+          "code_quality_std": 0.27668863285753664,
+          "faithfulness_std": 0.8128993597780213,
+          "combined_score_std": 0.9118862129259245,
+          "code_quality_mean": 3.8573333333333335,
+          "faithfulness_mean": 4.44,
+          "combined_score_mean": 8.297333333333333,
+          "sample_count": 150
+        },
+        "normal": {
+          "code_quality_variance": 0.15847499429301928,
+          "faithfulness_variance": 1.1085775842477184,
+          "combined_score_variance": 1.247583011205974,
+          "code_quality_std": 0.3980891788192933,
+          "faithfulness_std": 1.0528901102430959,
+          "combined_score_std": 1.1169525554856723,
+          "code_quality_mean": 3.860095238095239,
+          "faithfulness_mean": 4.248555555555555,
+          "combined_score_mean": 8.108650793650796,
+          "sample_count": 150
+        },
+        "bayesian": {
+          "code_quality_variance": 0.10811814263594396,
+          "faithfulness_variance": 0.9035979112906906,
+          "combined_score_variance": 1.2202770774592104,
+          "code_quality_std": 0.328813233669121,
+          "faithfulness_std": 0.9505776724133018,
+          "combined_score_std": 1.1046615216704212,
+          "code_quality_mean": 3.8610018761904756,
+          "faithfulness_mean": 4.118280952380952,
+          "combined_score_mean": 7.979282828571428,
+          "sample_count": 150
+        }
+      },
+      "sample_count": 150,
+      "metadata": {
+        "total_samples": 150,
+        "score_threshold": 7,
+        "positive_class": "high"
+      }
+    },
+    "main": {
+      "prompt_variances": {
+        "original": {
+          "code_quality_variance": 0.06287472035794182,
+          "faithfulness_variance": 0.6812080536912751,
+          "combined_score_variance": 0.807841163310962,
+          "code_quality_std": 0.25074832074799985,
+          "faithfulness_std": 0.8253532902286603,
+          "combined_score_std": 0.8987998460786262,
+          "code_quality_mean": 3.756666666666667,
+          "faithfulness_mean": 4.5,
+          "combined_score_mean": 8.256666666666666,
+          "sample_count": 150
+        },
+        "normal": {
+          "code_quality_variance": 0.15846710496279118,
+          "faithfulness_variance": 1.1400787563347494,
+          "combined_score_variance": 1.5165557229603273,
+          "code_quality_std": 0.3980792696973697,
+          "faithfulness_std": 1.0677447055990255,
+          "combined_score_std": 1.2314851696063283,
+          "code_quality_mean": 3.6252380952380965,
+          "faithfulness_mean": 4.267142857142858,
+          "combined_score_mean": 7.892380952380956,
+          "sample_count": 150
+        },
+        "bayesian": {
+          "code_quality_variance": 0.20686619198192102,
+          "faithfulness_variance": 1.0121919463087248,
+          "combined_score_variance": 1.4811292140336947,
+          "code_quality_std": 0.4548254522142764,
+          "faithfulness_std": 1.0060775051201198,
+          "combined_score_std": 1.2170165216765525,
+          "code_quality_mean": 3.552380000000002,
+          "faithfulness_mean": 4.066000000000001,
+          "combined_score_mean": 7.618380000000004,
+          "sample_count": 150
+        }
+      },
+      "sample_count": 150,
+      "metadata": {
+        "total_samples": 150,
+        "score_threshold": 7,
+        "positive_class": "high"
+      }
+    },
+    "03": {
+      "prompt_variances": {
+        "original": {
+          "code_quality_variance": 0.04670290827740493,
+          "faithfulness_variance": 0.686800894854586,
+          "combined_score_variance": 0.8395888143176733,
+          "code_quality_std": 0.21610855669640877,
+          "faithfulness_std": 0.8287345140963938,
+          "combined_score_std": 0.9162907913526542,
+          "code_quality_mean": 3.875333333333333,
+          "faithfulness_mean": 4.433333333333334,
+          "combined_score_mean": 8.308666666666666,
+          "sample_count": 150
+        },
+        "normal": {
+          "code_quality_variance": 0.04779619230242389,
+          "faithfulness_variance": 0.9393710907181669,
+          "combined_score_variance": 1.0423980733232892,
+          "code_quality_std": 0.218623402915662,
+          "faithfulness_std": 0.9692115820181716,
+          "combined_score_std": 1.020978977904682,
+          "code_quality_mean": 3.9371428571428586,
+          "faithfulness_mean": 4.271904761904762,
+          "combined_score_mean": 8.209047619047624,
+          "sample_count": 150
+        },
+        "bayesian": {
+          "code_quality_variance": 0.04508224154134065,
+          "faithfulness_variance": 0.9142663310961969,
+          "combined_score_variance": 1.0935291875304733,
+          "code_quality_std": 0.21232579104136323,
+          "faithfulness_std": 0.9561727517013842,
+          "combined_score_std": 1.045719459286511,
+          "code_quality_mean": 3.8870704761904773,
+          "faithfulness_mean": 4.065666666666666,
+          "combined_score_mean": 7.952737142857145,
+          "sample_count": 150
+        }
+      },
+      "sample_count": 150,
+      "metadata": {
+        "total_samples": 150,
+        "score_threshold": 7,
+        "positive_class": "high"
+      }
+    },
+    "05": {
+      "prompt_variances": {
+        "original": {
+          "code_quality_variance": 0.04903087248322148,
+          "faithfulness_variance": 0.6917673378076062,
+          "combined_score_variance": 0.8134425055928411,
+          "code_quality_std": 0.22142915906271576,
+          "faithfulness_std": 0.8317255183097404,
+          "combined_score_std": 0.9019104753759328,
+          "code_quality_mean": 3.8640000000000003,
+          "faithfulness_mean": 4.446666666666666,
+          "combined_score_mean": 8.310666666666666,
+          "sample_count": 150
+        },
+        "normal": {
+          "code_quality_variance": 0.05865612016618718,
+          "faithfulness_variance": 1.0203627356983065,
+          "combined_score_variance": 1.1537542802355847,
+          "code_quality_std": 0.2421902561338651,
+          "faithfulness_std": 1.0101300588034723,
+          "combined_score_std": 1.0741295453694515,
+          "code_quality_mean": 3.9052380952380963,
+          "faithfulness_mean": 4.289047619047619,
+          "combined_score_mean": 8.19428571428572,
+          "sample_count": 150
+        },
+        "bayesian": {
+          "code_quality_variance": 0.0810145671597492,
+          "faithfulness_variance": 0.9510366981692007,
+          "combined_score_variance": 1.1283639494361482,
+          "code_quality_std": 0.28463058015566284,
+          "faithfulness_std": 0.9752111044123732,
+          "combined_score_std": 1.0622447690792118,
+          "code_quality_mean": 3.9022904761904766,
+          "faithfulness_mean": 4.0956190476190475,
+          "combined_score_mean": 7.997909523809525,
+          "sample_count": 150
+        }
+      },
+      "sample_count": 150,
+      "metadata": {
+        "total_samples": 150,
+        "score_threshold": 7,
+        "positive_class": "high"
+      }
+    }
+  }
+}

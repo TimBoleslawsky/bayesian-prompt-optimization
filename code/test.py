@@ -247,7 +247,7 @@ class TestRunner:
             }
         }
         
-        filename = "artefacts/test_results.json"
+        filename = "artefacts/test_results_1.json"
         with open(filename, 'w') as f:
             json.dump(output_data, f, indent=2)
         
