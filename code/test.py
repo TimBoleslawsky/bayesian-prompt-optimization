@@ -83,6 +83,7 @@ class TestRunner:
     def __init__(self, sample_size=None):
         self.prompts = PromptLoader.load_all_prompts()
         self.test_data = self._load_test_data(sample_size)
+        self.class_weights = self._calculate_class_weights()
     
     def _load_test_data(self, sample_size=None):
         """Load the test dataset and optionally sample from it."""
@@ -94,6 +95,18 @@ class TestRunner:
             print(f"Sampled {sample_size} random examples from {len(pd.read_excel('data/test_data.xlsx'))} total examples")
         
         return df
+    
+    def _calculate_class_weights(self):
+        """Calculate class weights to handle imbalanced dataset."""
+        class_counts = self.test_data['quality'].value_counts()
+        total_samples = len(self.test_data)
+        n_classes = len(class_counts)
+        
+        weights = {}
+        for class_label, count in class_counts.items():
+            weights[class_label] = total_samples / (n_classes * count)
+        
+        return weights
     
     def evaluate_code_quality(self, module, function_code):
         """Evaluate code quality using given module."""
@@ -116,29 +129,54 @@ class TestRunner:
 
 
     def calculate_metrics(self, y_true, y_pred):
-        """Calculate precision, recall, specificity, and accuracy manually."""
+        """Calculate precision, recall, specificity, accuracy and weighted metrics."""
         # Convert to binary classification metrics for "high" as positive class
         tp = sum(1 for true, pred in zip(y_true, y_pred) if true == "high" and pred == "high")
         fp = sum(1 for true, pred in zip(y_true, y_pred) if true == "low" and pred == "high")
         fn = sum(1 for true, pred in zip(y_true, y_pred) if true == "high" and pred == "low")
         tn = sum(1 for true, pred in zip(y_true, y_pred) if true == "low" and pred == "low")
         
-        # Calculate metrics
+        # Calculate standard metrics
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
         specificity = tn / (tn + fp) if (tn + fp) > 0 else 0.0 
         accuracy = (tp + tn) / (tp + fp + fn + tn) if (tp + fp + fn + tn) > 0 else 0.0
+        
+        # Calculate weighted accuracy
+        weighted_accuracy = self._calculate_weighted_accuracy(y_true, y_pred)
         
         return {
             'precision': precision,
             'recall': recall,
             'specificity': specificity,
             'accuracy': accuracy,
+            'weighted_accuracy': weighted_accuracy,
             'tp': tp,
             'fp': fp,
             'fn': fn,
             'tn': tn
         }
+    
+    def _calculate_weighted_accuracy(self, y_true, y_pred):
+        """Calculate weighted accuracy using class weights."""
+        if len(y_true) == 0:
+            return 0.0
+        
+        correct_weights = []
+        total_weights = []
+        
+        for true, pred in zip(y_true, y_pred):
+            weight = self.class_weights[true]
+            total_weights.append(weight)
+            if true == pred:
+                correct_weights.append(weight)
+            else:
+                correct_weights.append(0)
+        
+        weighted_correct = sum(correct_weights)
+        total_weight = sum(total_weights)
+        
+        return weighted_correct / total_weight if total_weight > 0 else 0.0
     
     def run_test(self):
         """Run test on all prompts and print results."""
@@ -185,31 +223,10 @@ class TestRunner:
                 'metrics': metrics
             }
         
-        # Print results table
-        self._print_results(all_results, y_true)
-        
         # Save results
         self._save_results(all_results, y_true)
         
         return all_results
-    
-    def _print_results(self, results, y_true):
-        """Print comparison results."""
-        print("\\n" + "="*80)
-        print("RESULTS SUMMARY")
-        print("="*80)
-        
-        # Print metrics table
-        print(f"{'Prompt':<15} {'Precision':<12} {'Recall':<12} {'Specificity':<12} {'Accuracy':<12}")
-        print("-" * 67)
-        
-        for prompt_type in ['original', 'normal', 'bayesian']:
-            metrics = results[prompt_type]['metrics']
-            print(f"{prompt_type.capitalize():<15} "
-                  f"{metrics['precision']:<12.3f} "
-                  f"{metrics['recall']:<12.3f} "
-                  f"{metrics['specificity']:<12.3f} "
-                  f"{metrics['accuracy']:<12.3f}")
     
     def _save_results(self, results, y_true):
         """Save test results to artefacts folder."""
@@ -243,11 +260,14 @@ class TestRunner:
             'metadata': {
                 'total_samples': len(y_true),
                 'score_threshold': 7,
-                'positive_class': 'high'
+                'positive_class': 'high',
+                'class_weights': self.class_weights,
+                'class_distribution': self.test_data['quality'].value_counts().to_dict(),
+                'weighted_metrics_included': True
             }
         }
         
-        filename = "artefacts/test_results_0.json"
+        filename = "artefacts/test_results_0_weighted.json"
         with open(filename, 'w') as f:
             json.dump(output_data, f, indent=2)
         

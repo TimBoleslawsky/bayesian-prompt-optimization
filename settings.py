@@ -15,7 +15,7 @@ class LLMSettings(BaseModel):
         "llama-33-70b",
         "phi-4-17b",
     ] = "azure-gpt-4o"
-    temperature: float = 0.1
+    temperature: float = 0.0
     max_tokens: int = 10000
     cache: bool = True
     max_retries: int = 3
