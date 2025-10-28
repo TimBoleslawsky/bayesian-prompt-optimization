@@ -1,5 +1,4 @@
 from typing import Any, Literal
-
 import dspy
 from pydantic import BaseModel, HttpUrl
 from pydantic_settings import (
@@ -16,7 +15,7 @@ class LLMSettings(BaseModel):
         "llama-33-70b",
         "phi-4-17b",
     ] = "azure-gpt-4o"
-    temperature: float = 0.0
+    temperature: float = 0.1
     max_tokens: int = 10000
     cache: bool = True
     max_retries: int = 3

@@ -1,7 +1,7 @@
 import pandas as pd
 import json
 import dspy
-from dspy.teleprompt import MIPROv2
+from dspy.teleprompt import BootstrapFewShot
 from settings import settings
 from code.code_quality_signature import EvaluateCodeQuality
 from code.faithfulness_signature import EvaluateFaithfulness
@@ -29,16 +29,21 @@ class FaithfulnessPredictor(dspy.Module):
 
 class SignatureOptimizer:
     def optimize_signature(
-        self, signature_name, program_class, metric, trainset, minibatch_size
+        self, signature_name, program_class, metric, trainset
     ):
         with dspy.context(lm=settings.llm_client):
-            # Create an instance of the program
             program = program_class()
-            teleprompter = MIPROv2(metric=metric)
+            # BootstrapFewShot optimizer parameters
+            teleprompter = BootstrapFewShot(
+                metric=metric,
+                max_bootstrapped_demos=4,  # Number of examples to bootstrap
+                max_labeled_demos=16,      # Maximum labeled demonstrations
+                max_rounds=1,              # Number of bootstrapping rounds
+                max_errors=5               # Maximum errors allowed during bootstrapping
+            )
             optimized_program = teleprompter.compile(
-                program,
-                trainset=trainset,
-                minibatch_size=minibatch_size,
+                student=program,
+                trainset=trainset
             )
             # Save the optimized program
             optimized_program.save(
@@ -46,7 +51,7 @@ class SignatureOptimizer:
             )
         return optimized_program
 
-def metric(example, pred):
+def metric(example, pred, trace=None):
     """
     Metric for continuous score evaluation between 1-5.
     Uses inverted MSE so higher values indicate better performance.
@@ -132,30 +137,26 @@ if __name__ == "__main__":
         signature_name="faithfulness_bayesian",
         program_class=FaithfulnessPredictor,
         metric=metric,
-        trainset=posterior_faithfulness_examples,
-        minibatch_size=5,
+        trainset=posterior_faithfulness_examples
     )
 
     optimizer.optimize_signature(
         signature_name="code_quality_bayesian",
         program_class=CodeQualityPredictor,
         metric=metric,
-        trainset=posterior_code_quality_examples,       
-        minibatch_size=5,
+        trainset=posterior_code_quality_examples
     )  
 
     optimizer.optimize_signature(
         signature_name="faithfulness_normal",
         program_class=FaithfulnessPredictor,
         metric=metric,
-        trainset=normal_faithfulness_examples,
-        minibatch_size=5,
+        trainset=normal_faithfulness_examples
     )
 
     optimizer.optimize_signature(
         signature_name="code_quality_normal",
         program_class=CodeQualityPredictor,
         metric=metric,
-        trainset=normal_code_quality_examples,
-        minibatch_size=5,
-    )    
+        trainset=normal_code_quality_examples
+    )

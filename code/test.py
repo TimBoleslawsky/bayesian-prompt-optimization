@@ -143,7 +143,7 @@ class TestRunner:
     def run_test(self):
         """Run test on all prompts and print results."""
         print("="*80)
-        print("CODE QUALITY PROMPT TESTING")
+        print("PROMPT TESTING")
         print("="*80)
         print(f"Testing {len(self.test_data)} examples")
         print()
@@ -247,7 +247,7 @@ class TestRunner:
             }
         }
         
-        filename = "artefacts/test_results_1.json"
+        filename = "artefacts/test_results_0.json"
         with open(filename, 'w') as f:
             json.dump(output_data, f, indent=2)
         

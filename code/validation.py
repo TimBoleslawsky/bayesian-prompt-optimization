@@ -158,9 +158,7 @@ class ValidationRunner:
 
         with open(filename, 'w') as f:
             json.dump(results, f, indent=2)
-        
-        print(f"\nResults saved to: {filename}")
-    
+            
     def _create_validation_plots(self, results):
         """Create line plots comparing prompt performance with human annotations."""
         plt.style.use('default')
