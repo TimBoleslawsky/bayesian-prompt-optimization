@@ -42,7 +42,7 @@ class SignatureOptimizer:
             )
             # Save the optimized program
             optimized_program.save(
-                "bayesian_prompt_optimization/prompts/" + signature_name + ".json"
+                "prompts/" + signature_name + ".json"
             )
         return optimized_program
 
@@ -80,43 +80,43 @@ def create_dspy_examples_faithfulness(df):
     return examples
     
 if __name__ == "__main__":
-    with open("bayesian_prompt_optimization/data/benchmark.json", "r") as f:
+    with open("data/benchmark.json", "r") as f:
         benchmark_data = json.load(f)
     raw = pd.DataFrame(benchmark_data["benchmark"])
 
     # Load means (strip leading zeros from json ids to match csv ids)
-    means = pd.read_csv("bayesian_prompt_optimization/artefacts/means.csv")
+    means = pd.read_csv("artefacts/bayesian_posterior_means.csv")
 
     # Normalize IDs for safe merge
     raw["question_id_norm"] = raw["id"].astype(str).str.lstrip("0")
-    means["question_id_norm"] = means["question_id"].astype(str)
+    means["question_id_norm"] = means["question:"].astype(str)
 
     # Merge
     merged = raw.merge(means, on="question_id_norm", how="inner", suffixes=("", "_mean_src"))
 
     # Columns containing mean values
     mean_cols = [
-        "posterior_expected_code_quality",
-        "posterior_expected_faithfulness",
-        "normal_code_quality_means",
-        "normal_faithfulness_means",
+        "smoothed_quality",
+        "smoothed_faithfulness", 
+        "codequality",
+        "faithfulness",
     ]
 
     # Base columns to keep (question/answer + original id)
     base_cols = [c for c in raw.columns if c != "question_id_norm"]
 
     # Build four datasets: each keeps base cols + one mean column (renamed to 'score')
-    posterior_code_quality_dataset = merged[base_cols + ["posterior_expected_code_quality"]].rename(
-        columns={"posterior_expected_code_quality": "score"}
+    posterior_code_quality_dataset = merged[base_cols + ["smoothed_quality"]].rename(
+        columns={"smoothed_quality": "score"}
     )
-    posterior_faithfulness_dataset = merged[base_cols + ["posterior_expected_faithfulness"]].rename(
-        columns={"posterior_expected_faithfulness": "score"}
+    posterior_faithfulness_dataset = merged[base_cols + ["smoothed_faithfulness"]].rename(
+        columns={"smoothed_faithfulness": "score"}
     )
-    normal_code_quality_dataset = merged[base_cols + ["normal_code_quality_means"]].rename(
-        columns={"normal_code_quality_means": "score"}
+    normal_code_quality_dataset = merged[base_cols + ["codequality"]].rename(
+        columns={"codequality": "score"}
     )
-    normal_faithfulness_dataset = merged[base_cols + ["normal_faithfulness_means"]].rename(
-        columns={"normal_faithfulness_means": "score"}
+    normal_faithfulness_dataset = merged[base_cols + ["faithfulness"]].rename(
+        columns={"faithfulness": "score"}
     )
 
     # optimize signatures

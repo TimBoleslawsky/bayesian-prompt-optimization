@@ -1,6 +1,8 @@
 import json
 import pandas as pd
 import dspy
+import matplotlib.pyplot as plt
+import numpy as np
 from settings import settings
 from code.optimization import (
     CodeQualityPredictor,
@@ -125,14 +127,6 @@ class ValidationRunner:
     
     def run_validation(self):
         """Run validation on all prompts and print results in comparison format."""
-        print("="*120)
-        print("VALIDATION RESULTS ON HOLDOUT DATASET")
-        print("="*120)
-        
-        # Get annotator names for header
-        annotators = list(next(iter(self.human_annotations.values()))['code_quality'].keys())
-        
-        # Evaluate all prompts for all questions
         all_results = {}
         
         for metric in ['code_quality', 'faithfulness']:
@@ -154,39 +148,8 @@ class ValidationRunner:
                     
                     all_results[metric][question_id][prompt_type] = score
         
-        # Print comparison tables
-        for metric in ['code_quality', 'faithfulness']:
-            print(f"\n{metric.upper().replace('_', ' ')} EVALUATION")
-            print("="*120)
-            
-            # Create header with all annotators
-            header = f"{'ID':<5} {'Original':<10} {'Normal':<10} {'Bayesian':<10}"
-            for annotator in annotators:
-                header += f" {annotator.strip():<10}"
-            print(header)
-            print("-" * 120)
-            
-            # Data rows
-            for _, row in self.holdout_data.iterrows():
-                question_id = row['id']
-                
-                # Get LLM scores
-                original_score = all_results[metric][question_id]['original']
-                normal_score = all_results[metric][question_id]['normal']
-                bayesian_score = all_results[metric][question_id]['bayesian']
-                
-                # Get human scores
-                human_scores = self.human_annotations[question_id][metric]
-                
-                # Format row
-                row_str = f"{question_id:<5} {original_score:<10.2f} {normal_score:<10.2f} {bayesian_score:<10.2f}"
-                for annotator in annotators:
-                    score = human_scores[annotator]
-                    row_str += f" {score:<10.0f}"
-                
-                print(row_str)
-        
         self._save_results(all_results)
+        self._create_validation_plots(all_results)
         return all_results
     
     def _save_results(self, results):
@@ -197,6 +160,79 @@ class ValidationRunner:
             json.dump(results, f, indent=2)
         
         print(f"\nResults saved to: {filename}")
+    
+    def _create_validation_plots(self, results):
+        """Create line plots comparing prompt performance with human annotations."""
+        plt.style.use('default')
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+        
+        colors = {
+            'original': '#1f77b4',    
+            'normal': '#ff7f0e',      
+            'bayesian': '#2ca02c'     
+        }
+        
+        metrics = ['code_quality', 'faithfulness']
+        axes = [ax1, ax2]
+        
+        for i, metric in enumerate(metrics):
+            ax = axes[i]
+            
+            # Get question IDs and sort them
+            question_ids = sorted(results[metric].keys())
+            x_positions = range(len(question_ids))
+            
+            # Plot lines for each prompt type
+            for prompt_type in ['original', 'normal', 'bayesian']:
+                y_values = [results[metric][qid][prompt_type] for qid in question_ids]
+                ax.plot(x_positions, y_values, 
+                       color=colors[prompt_type], 
+                       marker='o', 
+                       linewidth=2, 
+                       markersize=6,
+                       label=prompt_type.capitalize())
+            
+            # Add human annotations as black dots
+            self._add_human_annotations(ax, metric, question_ids, x_positions)
+            
+            # Customize the plot
+            ax.set_xlabel('Question ID')
+            ax.set_ylabel('Score')
+            ax.set_title(f'{metric.replace("_", " ").title()} Validation Results')
+            ax.set_xticks(x_positions)
+            ax.set_xticklabels(question_ids)
+            ax.legend()
+            ax.grid(True, alpha=0.3)
+            ax.set_ylim(0, 6)  
+        
+        # Adjust layout and save
+        plt.tight_layout()
+        plot_filename = "artefacts/validation_plots.png"
+        plt.savefig(plot_filename, dpi=300, bbox_inches='tight')
+            
+    def _add_human_annotations(self, ax, metric, question_ids, x_positions):
+        """Add human annotation points to the plot."""
+        metric_key = 'code_quality' if metric == 'code_quality' else 'faithfulness'
+        
+        # Collect all human scores for each question
+        for i, question_id in enumerate(question_ids):
+            if question_id in self.human_annotations and metric_key in self.human_annotations[question_id]:
+                human_scores = []
+                for annotator, score in self.human_annotations[question_id][metric_key].items():
+                    human_scores.append(score)
+                
+                # Plot individual human scores as black dots with slight horizontal offset
+                if human_scores:
+                    # Add small random offsets to avoid overlapping points
+                    x_offsets = np.random.normal(0, 0.02, len(human_scores))
+                    x_coords = [i + offset for offset in x_offsets]
+                    
+                    ax.scatter(x_coords, human_scores, 
+                             color='black', 
+                             alpha=0.7, 
+                             s=30, 
+                             marker='o',
+                             label='Human Annotations' if i == 0 else "")  
 
 def main():
     """Main validation function."""
