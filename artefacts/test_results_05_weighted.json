@@ -5,6 +5,7 @@
       "recall": 0.9669421487603306,
       "specificity": 0.10344827586206896,
       "accuracy": 0.8,
+      "weighted_accuracy": 0.5351952123111997,
       "tp": 117,
       "fp": 26,
       "fn": 4,
@@ -15,6 +16,7 @@
       "recall": 0.859504132231405,
       "specificity": 0.27586206896551724,
       "accuracy": 0.7466666666666667,
+      "weighted_accuracy": 0.567683100598461,
       "tp": 104,
       "fp": 21,
       "fn": 17,
@@ -25,6 +27,7 @@
       "recall": 0.8512396694214877,
       "specificity": 0.27586206896551724,
       "accuracy": 0.74,
+      "weighted_accuracy": 0.5635508691935024,
       "tp": 103,
       "fp": 21,
       "fn": 18,
@@ -1986,6 +1989,15 @@
   "metadata": {
     "total_samples": 150,
     "score_threshold": 7,
-    "positive_class": "high"
+    "positive_class": "high",
+    "class_weights": {
+      "high": 0.6198347107438017,
+      "low": 2.586206896551724
+    },
+    "class_distribution": {
+      "high": 121,
+      "low": 29
+    },
+    "weighted_metrics_included": true
   }
 }

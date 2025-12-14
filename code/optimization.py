@@ -1,7 +1,7 @@
 import pandas as pd
 import json
 import dspy
-from dspy.teleprompt import MIPROv2
+from dspy.teleprompt import BootstrapFewShot
 from settings import settings
 from code.code_quality_signature import EvaluateCodeQuality
 from code.faithfulness_signature import EvaluateFaithfulness
@@ -29,24 +29,29 @@ class FaithfulnessPredictor(dspy.Module):
 
 class SignatureOptimizer:
     def optimize_signature(
-        self, signature_name, program_class, metric, trainset, minibatch_size
+        self, signature_name, program_class, metric, trainset
     ):
         with dspy.context(lm=settings.llm_client):
-            # Create an instance of the program
             program = program_class()
-            teleprompter = MIPROv2(metric=metric)
+            # BootstrapFewShot optimizer parameters
+            teleprompter = BootstrapFewShot(
+                metric=metric,
+                max_bootstrapped_demos=4,  # Number of examples to bootstrap
+                max_labeled_demos=16,      # Maximum labeled demonstrations
+                max_rounds=1,              # Number of bootstrapping rounds
+                max_errors=5               # Maximum errors allowed during bootstrapping
+            )
             optimized_program = teleprompter.compile(
-                program,
-                trainset=trainset,
-                minibatch_size=minibatch_size,
+                student=program,
+                trainset=trainset
             )
             # Save the optimized program
             optimized_program.save(
-                "bayesian_prompt_optimization/prompts/" + signature_name + ".json"
+                "prompts/" + signature_name + ".json"
             )
         return optimized_program
 
-def metric(example, pred):
+def metric(example, pred, trace=None):
     """
     Metric for continuous score evaluation between 1-5.
     Uses inverted MSE so higher values indicate better performance.
@@ -80,43 +85,43 @@ def create_dspy_examples_faithfulness(df):
     return examples
     
 if __name__ == "__main__":
-    with open("bayesian_prompt_optimization/data/benchmark.json", "r") as f:
+    with open("data/benchmark.json", "r") as f:
         benchmark_data = json.load(f)
     raw = pd.DataFrame(benchmark_data["benchmark"])
 
     # Load means (strip leading zeros from json ids to match csv ids)
-    means = pd.read_csv("bayesian_prompt_optimization/artefacts/means.csv")
+    means = pd.read_csv("artefacts/bayesian_posterior_means.csv")
 
     # Normalize IDs for safe merge
     raw["question_id_norm"] = raw["id"].astype(str).str.lstrip("0")
-    means["question_id_norm"] = means["question_id"].astype(str)
+    means["question_id_norm"] = means["question:"].astype(str)
 
     # Merge
     merged = raw.merge(means, on="question_id_norm", how="inner", suffixes=("", "_mean_src"))
 
     # Columns containing mean values
     mean_cols = [
-        "posterior_expected_code_quality",
-        "posterior_expected_faithfulness",
-        "normal_code_quality_means",
-        "normal_faithfulness_means",
+        "smoothed_quality",
+        "smoothed_faithfulness", 
+        "codequality",
+        "faithfulness",
     ]
 
     # Base columns to keep (question/answer + original id)
     base_cols = [c for c in raw.columns if c != "question_id_norm"]
 
     # Build four datasets: each keeps base cols + one mean column (renamed to 'score')
-    posterior_code_quality_dataset = merged[base_cols + ["posterior_expected_code_quality"]].rename(
-        columns={"posterior_expected_code_quality": "score"}
+    posterior_code_quality_dataset = merged[base_cols + ["smoothed_quality"]].rename(
+        columns={"smoothed_quality": "score"}
     )
-    posterior_faithfulness_dataset = merged[base_cols + ["posterior_expected_faithfulness"]].rename(
-        columns={"posterior_expected_faithfulness": "score"}
+    posterior_faithfulness_dataset = merged[base_cols + ["smoothed_faithfulness"]].rename(
+        columns={"smoothed_faithfulness": "score"}
     )
-    normal_code_quality_dataset = merged[base_cols + ["normal_code_quality_means"]].rename(
-        columns={"normal_code_quality_means": "score"}
+    normal_code_quality_dataset = merged[base_cols + ["codequality"]].rename(
+        columns={"codequality": "score"}
     )
-    normal_faithfulness_dataset = merged[base_cols + ["normal_faithfulness_means"]].rename(
-        columns={"normal_faithfulness_means": "score"}
+    normal_faithfulness_dataset = merged[base_cols + ["faithfulness"]].rename(
+        columns={"faithfulness": "score"}
     )
 
     # optimize signatures
@@ -132,30 +137,26 @@ if __name__ == "__main__":
         signature_name="faithfulness_bayesian",
         program_class=FaithfulnessPredictor,
         metric=metric,
-        trainset=posterior_faithfulness_examples,
-        minibatch_size=5,
+        trainset=posterior_faithfulness_examples
     )
 
     optimizer.optimize_signature(
         signature_name="code_quality_bayesian",
         program_class=CodeQualityPredictor,
         metric=metric,
-        trainset=posterior_code_quality_examples,       
-        minibatch_size=5,
+        trainset=posterior_code_quality_examples
     )  
 
     optimizer.optimize_signature(
         signature_name="faithfulness_normal",
         program_class=FaithfulnessPredictor,
         metric=metric,
-        trainset=normal_faithfulness_examples,
-        minibatch_size=5,
+        trainset=normal_faithfulness_examples
     )
 
     optimizer.optimize_signature(
         signature_name="code_quality_normal",
         program_class=CodeQualityPredictor,
         metric=metric,
-        trainset=normal_code_quality_examples,
-        minibatch_size=5,
-    )    
+        trainset=normal_code_quality_examples
+    )
