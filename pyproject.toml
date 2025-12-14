@@ -1,20 +1,20 @@
-[tool.poetry]
+[project]
 name = "bayesian_prompt_optimization"
 version = "0.1.0"
 description = ""
-authors = ["A523279 <tim.boleslawsky@volvo.com>"]
 readme = "README.md"
-package-mode = false
+requires-python = ">=3.12,<3.14"
+authors = [{ name = "Tim Boleslawsky", email = "tim.boleslawsky@yahoo.com" }]
+dependencies = [
+  "dspy>=3.0.3,<4.0.0",
+  "pydantic-settings>=2.11.0,<3.0.0",
+  "pandas>=2.2.0,<3.0.0",
+  "openpyxl>=3.1.5,<4.0.0",
+  "numpy>=1.24.0,<2.0.0",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.12,<3.14"
-dspy = ">=3.0.3,<4.0.0"
-pydantic-settings = ">=2.11.0,<3.0.0"
-pandas = ">=2.2.0,<3.0.0"
-openpyxl = "^3.1.5"
-numpy = ">=1.24.0,<2.0.0"
+[tool.uv]
+managed = true
 
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
-
+[tool.uv.environments.default]
+path = ".venv"
